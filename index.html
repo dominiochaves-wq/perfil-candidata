@@ -14,6 +14,7 @@
   <script type="text/babel" data-presets="react">
 const useState = React.useState;
 const useEffect = React.useEffect;
+const FIREBASE_URL = "https://perfil-candidata-default-rtdb.firebaseio.com";
 
 // ─── PERGUNTAS BASE (quem já trabalhou) ──────────────────────────────────────
 const PERGUNTAS_BASE = [
@@ -936,8 +937,14 @@ function App() {
   const perguntasDoBloco = todasPerguntas.filter(p => p.bloco === blocos[blocoAtual]);
 
   useEffect(() => {
-    const s = localStorage.getItem("candidatas_v4");
-    if (s) setCandidatas(JSON.parse(s));
+    fetch(FIREBASE_URL + "/candidatas.json")
+      .then(r => r.json())
+      .then(data => {
+        if (data) {
+          const lista = Object.values(data).sort((a,b) => a.id - b.id);
+          setCandidatas(lista);
+        }
+      }).catch(() => {});
   }, []);
 
   function salvar(id, val) { setRespostas(p => ({ ...p, [id]: val })); }
@@ -947,10 +954,17 @@ function App() {
     if (blocoAtual < blocos.length - 1) setBlocoAtual(b => b + 1);
     else {
       const nova = { id: Date.now(), nome: nomeCandidata, whatsapp, vagaInteresse, data: new Date().toLocaleString("pt-BR"), respostas };
-      const lista = [...candidatas, nova];
-      setCandidatas(lista);
-      localStorage.setItem("candidatas_v4", JSON.stringify(lista));
-      setModo("obrigado");
+      fetch(FIREBASE_URL + "/candidatas/" + nova.id + ".json", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(nova)
+      }).then(() => {
+        setCandidatas(prev => [...prev, nova]);
+        setModo("obrigado");
+      }).catch(() => {
+        setCandidatas(prev => [...prev, nova]);
+        setModo("obrigado");
+      });
     }
   }
 
@@ -1243,12 +1257,3 @@ ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(
   </script>
 </body>
 </html>
-
-
-   
-
-
- 
-
-
-
