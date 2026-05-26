@@ -7,12 +7,13 @@
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone@7.23.0/babel.min.js"></script>
-  <style>* {{ margin:0; padding:0; box-sizing:border-box; }} body {{ background:#0a0a0a; }}</style>
+  <style>* { margin:0; padding:0; box-sizing:border-box; } body { background:#0a0a0a; }</style>
 </head>
 <body>
   <div id="root"></div>
   <script type="text/babel" data-presets="react">
-const {{ useState, useEffect }} = React;
+const useState = React.useState;
+const useEffect = React.useEffect;
 
 // ─── PERGUNTAS BASE (quem já trabalhou) ──────────────────────────────────────
 const PERGUNTAS_BASE = [
@@ -1238,8 +1239,16 @@ function App() {
 }
 
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(React.createElement(App));
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
   </script>
 </body>
 </html>
+
+
+   
+
+
+ 
+
+
+
