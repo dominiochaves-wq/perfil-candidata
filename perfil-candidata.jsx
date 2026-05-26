@@ -1,0 +1,1224 @@
+import { useState, useEffect } from "react";
+
+// ─── PERGUNTAS BASE (quem já trabalhou) ──────────────────────────────────────
+const PERGUNTAS_BASE = [
+  {
+    bloco: "Sobre Você", id: "p1", tipo: "texto",
+    pergunta: "Como você se descreveria em 3 palavras? (não vale bonita, esforçada ou dedicada 😄)",
+    placeholder: "Ex: criativa, direta, curiosa...",
+    analisa: "Autoconhecimento e autoimagem real"
+  },
+  {
+    bloco: "Sobre Você", id: "p2", tipo: "opcoes",
+    pergunta: "Numa tarde livre inesperada, o que você provavelmente faria?",
+    opcoes: [
+      { letra: "A", texto: "Chamaria alguém pra sair ou ligar pra conversar" },
+      { letra: "B", texto: "Ficaria em casa fazendo algo que gosta sozinha" },
+      { letra: "C", texto: "Organizaria a casa ou resolveria pendências" },
+      { letra: "D", texto: "Sairia sozinha pra explorar algum lugar novo" }
+    ],
+    analisa: "Introversão vs. extroversão",
+    pontos: { extro: ["A","D"], intro: ["B","C"] }
+  },
+  {
+    bloco: "Sobre Você", id: "p3", tipo: "opcoes",
+    pergunta: "Quando você recebe uma crítica no trabalho, qual é sua reação mais honesta?",
+    opcoes: [
+      { letra: "A", texto: "Fico chateada no momento, mas logo processo e aprendo" },
+      { letra: "B", texto: "Já fico na defensiva e questiono se a crítica faz sentido" },
+      { letra: "C", texto: "Aceito tranquilamente, crítica faz parte do crescimento" },
+      { letra: "D", texto: "Fico ruminando por horas ou dias sem conseguir largar" }
+    ],
+    analisa: "Resiliência e maturidade emocional",
+    pontos: { resiliente: ["A","C"], fragil: ["B","D"] }
+  },
+  {
+    bloco: "Sobre Você", id: "p4", tipo: "texto",
+    pergunta: "Você mora com quem atualmente?",
+    placeholder: "Ex: sozinha, com marido e filhos, com pais...",
+    analisa: "Contexto de vida e disponibilidade"
+  },
+  {
+    bloco: "Sobre Você", id: "p5", tipo: "opcoes",
+    pergunta: "Como você se sente em relação à sua situação hoje?",
+    opcoes: [
+      { letra: "A", texto: "Estável e satisfeita, mas quero crescer" },
+      { letra: "B", texto: "Insatisfeita e precisando de mudança urgente" },
+      { letra: "C", texto: "Em transição, reconstruindo algo novo" },
+      { letra: "D", texto: "Tranquila, qualquer oportunidade boa é bem-vinda" }
+    ],
+    analisa: "Motivação real e estado emocional"
+  },
+  {
+    bloco: "Disponibilidade", id: "p_disp1", tipo: "opcoes",
+    pergunta: "Qual é o seu horário disponível para trabalhar?",
+    opcoes: [
+      { letra: "A", texto: "Manhã e tarde horário comercial completo" },
+      { letra: "B", texto: "Só manhã ou só tarde" },
+      { letra: "C", texto: "Flexível, me adapto ao horário necessário" },
+      { letra: "D", texto: "Tenho algumas restrições de horário" }
+    ],
+    analisa: "Disponibilidade de horário evita turnover por incompatibilidade"
+  },
+  {
+    bloco: "Disponibilidade", id: "p_disp2", tipo: "opcoes",
+    pergunta: "Como você chega ao trabalho normalmente?",
+    opcoes: [
+      { letra: "A", texto: "Transporte próprio carro ou moto" },
+      { letra: "B", texto: "Transporte público" },
+      { letra: "C", texto: "A pé ou bicicleta" },
+      { letra: "D", texto: "Depende de carona" }
+    ],
+    analisa: "Dependência de transporte risco de atraso e absenteísmo"
+  },
+  {
+    bloco: "Disponibilidade", id: "p_disp3", tipo: "texto",
+    pergunta: "Qual faixa de salário você está esperando para essa vaga?",
+    placeholder: "Ex: entre R$1.500 e R$2.000...",
+    analisa: "Expectativa salarial alinhamento antes da entrevista"
+  },
+  {
+    bloco: "Disponibilidade", id: "p_disp4", tipo: "opcoes",
+    pergunta: "Você tem filhos ou dependentes que precisam de atenção em horário fixo?",
+    opcoes: [
+      { letra: "A", texto: "Não" },
+      { letra: "B", texto: "Sim, mas tenho suporte não interfere no trabalho" },
+      { letra: "C", texto: "Sim, e preciso de horário específico por causa disso" },
+      { letra: "D", texto: "Prefiro não comentar" }
+    ],
+    analisa: "Disponibilidade real e possíveis limitações de horário"
+  },
+  {
+    bloco: "Disponibilidade", id: "p_sazon", tipo: "opcoes",
+    pergunta: "Datas como Dia das Mães, Namorados e Natal são períodos de muito movimento em loja. Como você se sente com isso?",
+    opcoes: [
+      { letra: "A", texto: "Adoro! Movimento e agitação me energizam" },
+      { letra: "B", texto: "Tudo bem, me adapto quando é necessário" },
+      { letra: "C", texto: "Fico um pouco ansiosa, mas dou conta" },
+      { letra: "D", texto: "Prefiro rotina tranquila, muito movimento me estresa" }
+    ],
+    analisa: "Tolerância a picos de demanda sazonal — essencial para loja de flores e presentes",
+    pontos: { recepcao: ["A","B"], vendas: ["A","B"], fragil: ["D"] }
+  },
+  {
+    bloco: "Perfil Profissional", id: "p6", tipo: "opcoes",
+    pergunta: "Numa reunião ou grupo, você tende a:",
+    opcoes: [
+      { letra: "A", texto: "Falar bastante, dar ideias e dominar a conversa" },
+      { letra: "B", texto: "Ouvir mais do que falar, mas contribuir quando tem algo certo a dizer" },
+      { letra: "C", texto: "Ficar quieta e preferir passar as ideias por escrito depois" },
+      { letra: "D", texto: "Depende muito do humor e do grupo" }
+    ],
+    analisa: "Perfil de comunicação e postura em grupo",
+    pontos: { extro: ["A"], intro: ["C"], neutro: ["B","D"] }
+  },
+  {
+    bloco: "Perfil Profissional", id: "p7", tipo: "texto",
+    pergunta: "Qual foi o maior desafio que você já enfrentou num trabalho anterior? Como você resolveu?",
+    placeholder: "Conta com suas palavras, sem precisar ser formal...",
+    analisa: "Capacidade de resolução e honestidade"
+  },
+  {
+    bloco: "Perfil Profissional", id: "p8", tipo: "opcoes",
+    pergunta: "Você prefere um trabalho que:",
+    opcoes: [
+      { letra: "A", texto: "Tenha rotina definida e tarefas previsíveis" },
+      { letra: "B", texto: "Mude bastante a cada dia e exija adaptação" },
+      { letra: "C", texto: "Misture rotina com novidades de vez em quando" },
+      { letra: "D", texto: "Seja 100% focado em resultados e metas, mesmo que caótico" }
+    ],
+    analisa: "Fit com cultura da empresa e perfil para vendas vs. recepção",
+    pontos: { vendas: ["B","D"], recepcao: ["A","C"] }
+  },
+  {
+    bloco: "Perfil Profissional", id: "p9", tipo: "opcoes",
+    pergunta: "Quando você tem que convencer alguém de algo, como você age naturalmente?",
+    opcoes: [
+      { letra: "A", texto: "Uso argumentos lógicos e dados concretos" },
+      { letra: "B", texto: "Apelo pro emocional e crio conexão primeiro" },
+      { letra: "C", texto: "Fico insistindo até a pessoa ceder" },
+      { letra: "D", texto: "Prefiro não convencer, deixo a pessoa decidir sozinha" }
+    ],
+    analisa: "Aptidão natural para vendas e persuasão",
+    pontos: { vendas: ["A","B"], recepcao: ["D"] }
+  },
+  {
+    bloco: "Perfil Profissional", id: "p_saida", tipo: "opcoes",
+    pergunta: "Por que você saiu (ou quer sair) do seu último emprego?",
+    opcoes: [
+      { letra: "A", texto: "Quero crescer e não havia espaço para isso" },
+      { letra: "B", texto: "Problemas com a chefia ou ambiente de trabalho" },
+      { letra: "C", texto: "Questão salarial precisava ganhar mais" },
+      { letra: "D", texto: "Fui demitida ou a empresa fechou" }
+    ],
+    analisa: "Padrão de saída prediz comportamento futuro e risco de turnover",
+    pontos: { turnover_baixo: ["A"], turnover_medio: ["C","D"], turnover_alto: ["B"] }
+  },
+  {
+    bloco: "Sonhos e Metas", id: "p10", tipo: "texto",
+    pergunta: "Daqui 3 anos, como você quer estar? Descreva como se fosse um sonho mesmo.",
+    placeholder: "Financeiramente, pessoalmente, profissionalmente...",
+    analisa: "Ambição, clareza de propósito e alinhamento com a vaga"
+  },
+  {
+    bloco: "Sonhos e Metas", id: "p11", tipo: "opcoes",
+    pergunta: "O que mais te move hoje em dia?",
+    opcoes: [
+      { letra: "A", texto: "Dinheiro e estabilidade financeira" },
+      { letra: "B", texto: "Crescer profissionalmente e ser reconhecida" },
+      { letra: "C", texto: "Ter mais tempo de qualidade com família" },
+      { letra: "D", texto: "Fazer algo que tenha significado e impacto" }
+    ],
+    analisa: "Motivação central o que retém ou perde a pessoa"
+  },
+  {
+    bloco: "Sonhos e Metas", id: "p12", tipo: "texto",
+    pergunta: "Se o dinheiro não fosse problema, o que você estaria fazendo hoje?",
+    placeholder: "Pode ser qualquer coisa, sem julgamento...",
+    analisa: "Vocação real e fit com a função"
+  },
+  {
+    bloco: "Sonhos e Metas", id: "p_retencao", tipo: "opcoes",
+    pergunta: "O que te faria deixar um emprego bom?",
+    opcoes: [
+      { letra: "A", texto: "Uma proposta com salário bem maior" },
+      { letra: "B", texto: "Falta de reconhecimento ou crescimento" },
+      { letra: "C", texto: "Ambiente ruim ou chefe que não respeita" },
+      { letra: "D", texto: "Mudança de planos pessoais família, estudo, mudança de cidade" }
+    ],
+    analisa: "Fator de retenção real o que mantém ou perde essa pessoa",
+    pontos: { retencao_salario: ["A"], retencao_crescimento: ["B"], retencao_ambiente: ["C"], retencao_vida: ["D"] }
+  },
+  {
+    bloco: "Situações do Dia a Dia", id: "p13", tipo: "opcoes",
+    pergunta: "Uma cliente entra nervosa e fala que não foi bem atendida antes. O que você faz?",
+    opcoes: [
+      { letra: "A", texto: "Peço desculpas imediatamente e ouço o que ela precisava" },
+      { letra: "B", texto: "Tento explicar o que pode ter acontecido na outra vez" },
+      { letra: "C", texto: "Fico sem jeito e passo pra outra pessoa resolver" },
+      { letra: "D", texto: "Ouço com atenção, valido o sentimento dela e ofereço solução" }
+    ],
+    analisa: "Inteligência emocional e habilidade em atendimento",
+    pontos: { recepcao: ["A","D"], fragil: ["C"] }
+  },
+  {
+    bloco: "Situações do Dia a Dia", id: "p14", tipo: "opcoes",
+    pergunta: "Seu chefe te dá duas tarefas urgentes ao mesmo tempo. O que você faz?",
+    opcoes: [
+      { letra: "A", texto: "Faço as duas ao mesmo tempo e entrego as duas mais ou menos" },
+      { letra: "B", texto: "Peço pra ele priorizar qual é mais importante agora" },
+      { letra: "C", texto: "Resolvo por conta própria a que parece mais urgente" },
+      { letra: "D", texto: "Fico travada sem saber por onde começar" }
+    ],
+    analisa: "Gestão de tempo, comunicação e organização",
+    pontos: { resiliente: ["B","C"], fragil: ["D"] }
+  },
+  {
+    bloco: "Situações do Dia a Dia", id: "p15", tipo: "texto",
+    pergunta: "Me conta uma situação em que você teve que lidar com uma pessoa difícil. O que aconteceu e como você agiu?",
+    placeholder: "Quanto mais real, melhor...",
+    analisa: "Maturidade interpessoal e postura em conflito"
+  },
+  {
+    bloco: "Situações do Dia a Dia", id: "p16", tipo: "opcoes",
+    pergunta: "Como você se sente quando precisa cobrar algo de alguém (pagamento, prazo, tarefa)?",
+    opcoes: [
+      { letra: "A", texto: "Faço sem problema, é parte do trabalho" },
+      { letra: "B", texto: "Me sinto desconfortável mas faço quando necessário" },
+      { letra: "C", texto: "Evito ao máximo, prefiro que outra pessoa cobre" },
+      { letra: "D", texto: "Depende de quem é com clientes sim, com colegas não" }
+    ],
+    analisa: "Assertividade e fit com vendas/cobrança",
+    pontos: { vendas: ["A","D"], fragil: ["C"] }
+  }
+];
+
+// ─── PERGUNTAS BASE PRIMEIRO EMPREGO ─────────────────────────────────────────
+const PERGUNTAS_BASE_PRIMEIRO = [
+  {
+    bloco: "Sobre Você", id: "b1", tipo: "texto",
+    pergunta: "Como você se descreveria em 3 palavras? (não vale bonita, tímida ou estudiosa 😄)",
+    placeholder: "Ex: curiosa, animada, organizada...",
+    analisa: "Autoconhecimento e autoimagem real"
+  },
+  {
+    bloco: "Sobre Você", id: "b2", tipo: "opcoes",
+    pergunta: "Quando você está num grupo de pessoas que não conhece, o que você costuma fazer?",
+    opcoes: [
+      { letra: "A", texto: "Já vou chegando, me apresentando e puxando conversa" },
+      { letra: "B", texto: "Espero alguém me chamar, mas se chamarem participo bem" },
+      { letra: "C", texto: "Fico mais quieta observando, demoro a me soltar" },
+      { letra: "D", texto: "Depende muito do lugar e do clima" }
+    ],
+    analisa: "Introversão vs. extroversão em contexto social real",
+    pontos: { extro: ["A","D"], intro: ["C"] }
+  },
+  {
+    bloco: "Sobre Você", id: "b3", tipo: "opcoes",
+    pergunta: "Uma amiga sua está claramente chateada mas diz que 'tá tudo bem'. O que você faz?",
+    opcoes: [
+      { letra: "A", texto: "Percebo e pergunto com cuidado o que está acontecendo" },
+      { letra: "B", texto: "Respeito e deixo ela falar quando quiser" },
+      { letra: "C", texto: "Finjo que acreditei pra não criar situação" },
+      { letra: "D", texto: "Mudo de assunto pra tentar animar ela" }
+    ],
+    analisa: "Empatia e leitura emocional do outro",
+    pontos: { recepcao: ["A","B"], fragil: ["C"] }
+  },
+  {
+    bloco: "Sobre Você", id: "b4", tipo: "texto",
+    pergunta: "Você mora com quem atualmente?",
+    placeholder: "Ex: com os pais, sozinha, com avós...",
+    analisa: "Contexto de vida e disponibilidade"
+  },
+  {
+    bloco: "Disponibilidade", id: "b_disp1", tipo: "opcoes",
+    pergunta: "Qual é o seu horário disponível para trabalhar?",
+    opcoes: [
+      { letra: "A", texto: "Manhã e tarde horário comercial completo" },
+      { letra: "B", texto: "Só manhã ou só tarde" },
+      { letra: "C", texto: "Flexível, me adapto ao horário necessário" },
+      { letra: "D", texto: "Tenho algumas restrições de horário" }
+    ],
+    analisa: "Disponibilidade de horário"
+  },
+  {
+    bloco: "Disponibilidade", id: "b_disp2", tipo: "opcoes",
+    pergunta: "Como você vai chegar ao trabalho?",
+    opcoes: [
+      { letra: "A", texto: "Transporte público" },
+      { letra: "B", texto: "Alguém me leva" },
+      { letra: "C", texto: "A pé ou de bicicleta" },
+      { letra: "D", texto: "Moto ou carro próprio" }
+    ],
+    analisa: "Dependência de transporte risco de atraso"
+  },
+  {
+    bloco: "Disponibilidade", id: "b_disp3", tipo: "texto",
+    pergunta: "Qual faixa de salário você está esperando para essa vaga?",
+    placeholder: "Ex: entre R$1.200 e R$1.500...",
+    analisa: "Expectativa salarial alinhamento antes da entrevista"
+  },
+  {
+    bloco: "Disponibilidade", id: "b_sazon", tipo: "opcoes",
+    pergunta: "Datas como Dia das Mães, Namorados e Natal são períodos de muito movimento em loja. Como você se sente com isso?",
+    opcoes: [
+      { letra: "A", texto: "Adoro! Movimento e agitação me energizam" },
+      { letra: "B", texto: "Tudo bem, me adapto quando é necessário" },
+      { letra: "C", texto: "Fico um pouco ansiosa, mas dou conta" },
+      { letra: "D", texto: "Prefiro rotina tranquila, muito movimento me estresa" }
+    ],
+    analisa: "Tolerância a picos de demanda sazonal",
+    pontos: { recepcao: ["A","B"], vendas: ["A","B"], fragil: ["D"] }
+  },
+  {
+    bloco: "Como Você Aprende", id: "b6", tipo: "opcoes",
+    pergunta: "Quando você precisa aprender algo novo, como você aprende melhor?",
+    opcoes: [
+      { letra: "A", texto: "Alguém me explica com calma e depois eu pratico" },
+      { letra: "B", texto: "Já vou fazendo e aprendo errando na prática" },
+      { letra: "C", texto: "Preciso ver alguém fazer antes de tentar" },
+      { letra: "D", texto: "Leio, anoto e me organizo antes de começar" }
+    ],
+    analisa: "Estilo de aprendizado como treinar essa pessoa"
+  },
+  {
+    bloco: "Como Você Aprende", id: "b7", tipo: "opcoes",
+    pergunta: "Se você errar algo na frente de outras pessoas, como você reage?",
+    opcoes: [
+      { letra: "A", texto: "Fico com vergonha mas tento consertar na hora" },
+      { letra: "B", texto: "Me trava e fico pensando nisso o dia todo" },
+      { letra: "C", texto: "Encaro bem, todo mundo erra quando está aprendendo" },
+      { letra: "D", texto: "Depende do erro pequeno tudo bem, grande me abala" }
+    ],
+    analisa: "Resiliência a erros no aprendizado",
+    pontos: { resiliente: ["A","C","D"], fragil: ["B"] }
+  },
+  {
+    bloco: "Como Você Aprende", id: "b8", tipo: "opcoes",
+    pergunta: "Você recebe uma instrução nova e não entendeu direito. O que faz?",
+    opcoes: [
+      { letra: "A", texto: "Pergunto de novo sem vergonha até entender" },
+      { letra: "B", texto: "Tento fazer e vejo se acerta" },
+      { letra: "C", texto: "Fico com dúvida mas não quero parecer lenta" },
+      { letra: "D", texto: "Anoto a dúvida e pergunto num momento certo" }
+    ],
+    analisa: "Comunicação de dúvidas e autonomia futura",
+    pontos: { recepcao: ["A","D"], fragil: ["C"] }
+  },
+  {
+    bloco: "Situações do Dia a Dia", id: "b9", tipo: "opcoes",
+    pergunta: "Alguém chega até você bem nervosa pedindo ajuda com algo que você não sabe resolver. O que você faz?",
+    opcoes: [
+      { letra: "A", texto: "Mantenho a calma, ouço ela e busco alguém que possa ajudar" },
+      { letra: "B", texto: "Fico nervosa também e não consigo pensar direito" },
+      { letra: "C", texto: "Falo que não sei e encaminho pra outra pessoa logo" },
+      { letra: "D", texto: "Tento ajudar mesmo sem saber, improviso" }
+    ],
+    analisa: "Estabilidade emocional e iniciativa sob pressão",
+    pontos: { recepcao: ["A"], fragil: ["B"] }
+  },
+  {
+    bloco: "Situações do Dia a Dia", id: "b10", tipo: "opcoes",
+    pergunta: "Você está no meio de uma tarefa e alguém te interrompe pedindo ajuda urgente. Como você reage?",
+    opcoes: [
+      { letra: "A", texto: "Paro tudo e ajudo logo" },
+      { letra: "B", texto: "Termino o que estava fazendo primeiro" },
+      { letra: "C", texto: "Fico irritada mas ajudo" },
+      { letra: "D", texto: "Avalio o que é mais urgente e decido na hora" }
+    ],
+    analisa: "Agilidade e gestão de múltiplas demandas",
+    pontos: { recepcao: ["A","D"], fragil: ["C"] }
+  },
+  {
+    bloco: "Situações do Dia a Dia", id: "b11", tipo: "texto",
+    pergunta: "Conta uma situação pode ser na escola, família ou com amigos em que você precisou lidar com alguém chateado ou difícil. Como foi?",
+    placeholder: "Quanto mais real, melhor...",
+    analisa: "Inteligência emocional e maturidade interpessoal"
+  },
+  {
+    bloco: "Sonhos e Metas", id: "b12", tipo: "texto",
+    pergunta: "Por que você quer trabalhar na recepção como primeiro emprego? O que te atraiu?",
+    placeholder: "Fala com sinceridade...",
+    analisa: "Motivação real e alinhamento com a função"
+  },
+  {
+    bloco: "Sonhos e Metas", id: "b13", tipo: "opcoes",
+    pergunta: "O que mais te move pra conseguir esse emprego agora?",
+    opcoes: [
+      { letra: "A", texto: "Independência financeira quero meu próprio dinheiro" },
+      { letra: "B", texto: "Experiência preciso começar a construir meu currículo" },
+      { letra: "C", texto: "Crescer e aprender quero evoluir profissionalmente" },
+      { letra: "D", texto: "Ajudar em casa a família precisa" }
+    ],
+    analisa: "Motivação central o que retém ou perde essa pessoa"
+  },
+  {
+    bloco: "Sonhos e Metas", id: "b14", tipo: "opcoes",
+    pergunta: "O que te faria deixar esse emprego antes de 1 ano?",
+    opcoes: [
+      { letra: "A", texto: "Uma proposta melhor com salário maior" },
+      { letra: "B", texto: "Ambiente ruim ou chefe que não respeita" },
+      { letra: "C", texto: "Sentir que não estou aprendendo nada" },
+      { letra: "D", texto: "Mudança de planos faculdade, mudança de cidade" }
+    ],
+    analisa: "Fator de risco de turnover o que pode fazer ela sair cedo",
+    pontos: { retencao_salario: ["A"], retencao_ambiente: ["B"], retencao_crescimento: ["C"], retencao_vida: ["D"] }
+  },
+  {
+    bloco: "Sonhos e Metas", id: "b15", tipo: "texto",
+    pergunta: "Daqui 2 anos, como você quer estar?",
+    placeholder: "Financeiramente, pessoalmente, no trabalho...",
+    analisa: "Ambição e visão de futuro mostra se fica ou vai embora rápido"
+  }
+];
+
+// ─── PERGUNTAS VENDAS ─────────────────────────────────────────────────────────
+const PERGUNTAS_VENDAS = [
+  {
+    bloco: "Perfil de Vendas", id: "v1", tipo: "opcoes",
+    pergunta: "Você tentou vender pra uma cliente 3 vezes e ela ficou te enrolando. O que faz na 4ª tentativa?",
+    opcoes: [
+      { letra: "A", texto: "Insisto com uma abordagem diferente, mudo a estratégia" },
+      { letra: "B", texto: "Desisto se ela não quis até agora, não vai querer" },
+      { letra: "C", texto: "Pergunto diretamente o que está impedindo ela de fechar" },
+      { letra: "D", texto: "Passo a cliente pra outra pessoa tentar" }
+    ],
+    analisa: "Persistência e inteligência em vendas",
+    pontos: { vendas: ["A","C"], fragil: ["B","D"] }
+  },
+  {
+    bloco: "Perfil de Vendas", id: "v2", tipo: "opcoes",
+    pergunta: "Quando uma cliente diz que está caro, o que passa pela sua cabeça primeiro?",
+    opcoes: [
+      { letra: "A", texto: "Ela tem razão, vou oferecer desconto logo" },
+      { letra: "B", texto: "Ela ainda não entendeu o valor do que estou oferecendo" },
+      { letra: "C", texto: "Melhor nem insistir, não quero parecer chata" },
+      { letra: "D", texto: "Vou entender melhor o que ela realmente precisa" }
+    ],
+    analisa: "Mentalidade de valor vs. preço",
+    pontos: { vendas: ["B","D"], fragil: ["A","C"] }
+  },
+  {
+    bloco: "Perfil de Vendas", id: "v3", tipo: "opcoes",
+    pergunta: "Você fecha um mês excelente em vendas. O que faz no mês seguinte?",
+    opcoes: [
+      { letra: "A", texto: "Relaxo um pouco, mês bom merece uma folga" },
+      { letra: "B", texto: "Tento entender o que funcionou e repetir" },
+      { letra: "C", texto: "Fico com medo de não repetir o resultado" },
+      { letra: "D", texto: "Já coloco uma meta maior pra mim mesma" }
+    ],
+    analisa: "Mentalidade de crescimento e consistência",
+    pontos: { vendas: ["B","D"], fragil: ["A","C"] }
+  },
+  {
+    bloco: "Perfil de Vendas", id: "v4", tipo: "opcoes",
+    pergunta: "Como você costuma abordar uma cliente que ainda não decidiu comprar?",
+    opcoes: [
+      { letra: "A", texto: "Mostro dados, benefícios e argumento com lógica" },
+      { letra: "B", texto: "Crio conexão primeiro, entendo o que ela quer e aí ofereço" },
+      { letra: "C", texto: "Dou tempo, não gosto de pressionar" },
+      { letra: "D", texto: "Uso urgência digo que é promoção ou que vai acabar" }
+    ],
+    analisa: "Estilo de abordagem comercial consultiva, relacional ou agressiva",
+    pontos: { venda_consultiva: ["A","B"], venda_passiva: ["C"], venda_agressiva: ["D"] }
+  },
+  {
+    bloco: "Perfil de Vendas", id: "v5", tipo: "opcoes",
+    pergunta: "Imagine que você passou 3 semanas seguidas sem bater a meta. Como você está se sentindo?",
+    opcoes: [
+      { letra: "A", texto: "Ansiosa mas determinada a virar o jogo" },
+      { letra: "B", texto: "Desmotivada e começando a questionar se é pra mim" },
+      { letra: "C", texto: "Analiso o que errei e monto um novo plano" },
+      { letra: "D", texto: "Procuro apoio da equipe ou da liderança pra entender onde errei" }
+    ],
+    analisa: "Resiliência a pressão de meta fundamental em vendas",
+    pontos: { resiliente: ["A","C","D"], fragil: ["B"] }
+  }
+];
+
+// ─── PERGUNTAS RECEPÇÃO (quem já trabalhou) ───────────────────────────────────
+const PERGUNTA_PRIMEIRO_EMPREGO = {
+  bloco: "Experiência", id: "r0", tipo: "opcoes",
+  pergunta: "É o seu primeiro emprego ou você já trabalhou antes?",
+  opcoes: [
+    { letra: "A", texto: "É meu primeiro emprego" },
+    { letra: "B", texto: "Já trabalhei antes" }
+  ],
+  analisa: "Triagem de experiência define o caminho do teste"
+};
+
+const PERGUNTAS_RECEPCAO_EXP = [
+  {
+    bloco: "Perfil de Recepção", id: "r1", tipo: "opcoes",
+    pergunta: "Você está atendendo uma cliente e o telefone toca ao mesmo tempo. O que faz?",
+    opcoes: [
+      { letra: "A", texto: "Peço licença com educação pra quem está na frente e atendo o telefone rápido" },
+      { letra: "B", texto: "Ignoro o telefone e foco em quem está na minha frente" },
+      { letra: "C", texto: "Fico ansiosa e acabo atendendo os dois pela metade" },
+      { letra: "D", texto: "Sinalizo pro telefone que já atendo e termino o atendimento atual" }
+    ],
+    analisa: "Gestão de múltiplas demandas e presença no atendimento",
+    pontos: { recepcao: ["A","D"], fragil: ["C"] }
+  },
+  {
+    bloco: "Perfil de Recepção", id: "r2", tipo: "opcoes",
+    pergunta: "Uma cliente chega sem agendamento numa hora cheia. Como você age?",
+    opcoes: [
+      { letra: "A", texto: "Digo que não tem como e pronto" },
+      { letra: "B", texto: "Acolho com simpatia, explico a situação e ofereço alternativas" },
+      { letra: "C", texto: "Encaixo ela de qualquer jeito pra não criar problema" },
+      { letra: "D", texto: "Chamo minha superiora pra resolver" }
+    ],
+    analisa: "Proatividade e empatia no atendimento",
+    pontos: { recepcao: ["B"], fragil: ["A","D"] }
+  },
+  {
+    bloco: "Perfil de Recepção", id: "r3", tipo: "opcoes",
+    pergunta: "No final de um dia muito movimentado com muitas pessoas, como você costuma estar?",
+    opcoes: [
+      { letra: "A", texto: "Energizada gente me dá energia" },
+      { letra: "B", texto: "Cansada mas satisfeita com o que fiz" },
+      { letra: "C", texto: "Esgotada, preciso de silêncio pra me recuperar" },
+      { letra: "D", texto: "Normal, não afeta muito meu humor" }
+    ],
+    analisa: "Sustentabilidade emocional para lidar com volume de pessoas",
+    pontos: { recepcao: ["A","B","D"], intro: ["C"] }
+  },
+  {
+    bloco: "Perfil de Recepção", id: "r4", tipo: "texto",
+    pergunta: "Conta uma situação do seu trabalho anterior em que você atendeu uma pessoa difícil. Como você agiu?",
+    placeholder: "Descreve como aconteceu de verdade...",
+    analisa: "Experiência prática e maturidade no atendimento"
+  },
+  {
+    bloco: "Perfil de Recepção", id: "r5", tipo: "opcoes",
+    pergunta: "Depois de aprender como as coisas funcionam, você prefere:",
+    opcoes: [
+      { letra: "A", texto: "Trabalhar com autonomia sei o que fazer e faço" },
+      { letra: "B", texto: "Ter alguém por perto pra confirmar quando tenho dúvida" },
+      { letra: "C", texto: "Seguir sempre um passo a passo fixo" },
+      { letra: "D", texto: "Depende da tarefa algumas faço sozinha, outras prefiro confirmar" }
+    ],
+    analisa: "Nível de autonomia esperado quanto suporte vai precisar",
+    pontos: { autonomia_alta: ["A"], autonomia_media: ["D"], autonomia_baixa: ["B","C"] }
+  }
+];
+
+// ─── PERGUNTAS RECEPÇÃO PRIMEIRO EMPREGO ─────────────────────────────────────
+const PERGUNTAS_RECEPCAO_PRIMEIRO = [
+  {
+    bloco: "Perfil de Recepção", id: "rp1", tipo: "opcoes",
+    pergunta: "Quando você não sabe fazer algo, qual é sua reação natural?",
+    opcoes: [
+      { letra: "A", texto: "Pergunto pra alguém sem vergonha" },
+      { letra: "B", texto: "Tento descobrir sozinha antes de perguntar" },
+      { letra: "C", texto: "Fico com medo de parecer incompetente e evito perguntar" },
+      { letra: "D", texto: "Observo como os outros fazem e copio" }
+    ],
+    analisa: "Postura de aprendizado",
+    pontos: { recepcao: ["A","B","D"], fragil: ["C"] }
+  },
+  {
+    bloco: "Perfil de Recepção", id: "rp2", tipo: "opcoes",
+    pergunta: "Imagina que você está na recepção e chega uma pessoa claramente irritada. Você nunca passou por isso antes. O que faria?",
+    opcoes: [
+      { letra: "A", texto: "Ficaria travada sem saber o que fazer" },
+      { letra: "B", texto: "Tentaria manter a calma e ouvir ela primeiro" },
+      { letra: "C", texto: "Chamaria alguém mais experiente pra ajudar" },
+      { letra: "D", texto: "Pediria licença e buscaria a responsável" }
+    ],
+    analisa: "Instinto de atendimento mesmo sem experiência",
+    pontos: { recepcao: ["B","C","D"], fragil: ["A"] }
+  },
+  {
+    bloco: "Perfil de Recepção", id: "rp3", tipo: "opcoes",
+    pergunta: "Depois de aprender como as coisas funcionam aqui, como você imagina que vai preferir trabalhar?",
+    opcoes: [
+      { letra: "A", texto: "Com autonomia aprendi, agora faço sozinha" },
+      { letra: "B", texto: "Sempre com alguém por perto pra confirmar" },
+      { letra: "C", texto: "Seguindo um passo a passo fixo sempre" },
+      { letra: "D", texto: "Depende da tarefa algumas farei sozinha, outras prefiro confirmar" }
+    ],
+    analisa: "Nível de autonomia esperado quanto suporte vai precisar",
+    pontos: { autonomia_alta: ["A"], autonomia_media: ["D"], autonomia_baixa: ["B","C"] }
+  },
+  {
+    bloco: "Perfil de Recepção", id: "rp4", tipo: "texto",
+    pergunta: "Conta uma situação pode ser na escola, família ou com amigos em que você precisou lidar com alguém chateado ou difícil. Como foi?",
+    placeholder: "Quanto mais real, melhor...",
+    analisa: "Inteligência emocional e maturidade interpessoal"
+  },
+  {
+    bloco: "Perfil de Recepção", id: "rp5", tipo: "opcoes",
+    pergunta: "Como você se sente no final de um dia em que ficou o tempo todo lidando com pessoas diferentes?",
+    opcoes: [
+      { letra: "A", texto: "Energizada gente me dá energia" },
+      { letra: "B", texto: "Cansada mas satisfeita" },
+      { letra: "C", texto: "Esgotada, preciso de silêncio pra me recuperar" },
+      { letra: "D", texto: "Normal, não me afeta muito" }
+    ],
+    analisa: "Sustentabilidade emocional para lidar com volume de pessoas",
+    pontos: { recepcao: ["A","B","D"], intro: ["C"] }
+  }
+];
+
+// ─── MOTOR DE ANÁLISE ─────────────────────────────────────────────────────────
+function gerarLaudo(cand) {
+  const r = cand.respostas;
+  const vaga = cand.vagaInteresse;
+  const primeiroEmprego = r.r0?.letra === "A";
+
+  let extro = 0, intro = 0, vendas = 0, recepcao = 0, resiliente = 0, fragil = 0;
+  let turnover = 0; // quanto maior, mais risco de sair cedo
+
+  const todasP = [
+    ...PERGUNTAS_BASE, ...PERGUNTAS_BASE_PRIMEIRO,
+    ...PERGUNTAS_VENDAS, ...PERGUNTAS_RECEPCAO_EXP, ...PERGUNTAS_RECEPCAO_PRIMEIRO,
+    PERGUNTA_PRIMEIRO_EMPREGO
+  ];
+
+  todasP.forEach(p => {
+    const resp = r[p.id];
+    if (!resp?.letra || !p.pontos) return;
+    const l = resp.letra;
+    if (p.pontos.extro?.includes(l)) extro += 2;
+    if (p.pontos.intro?.includes(l)) intro += 2;
+    if (p.pontos.vendas?.includes(l)) vendas += 2;
+    if (p.pontos.recepcao?.includes(l)) recepcao += 2;
+    if (p.pontos.resiliente?.includes(l)) resiliente += 2;
+    if (p.pontos.fragil?.includes(l)) fragil += 2;
+    if (p.pontos.turnover_alto?.includes(l)) turnover += 3;
+    if (p.pontos.turnover_medio?.includes(l)) turnover += 1;
+    if (p.pontos.turnover_baixo?.includes(l)) turnover -= 1;
+  });
+
+  // Perfil base
+  const introExtro = extro > intro + 2 ? "Extrovertida" : intro > extro + 2 ? "Introvertida" : "Ambiverte";
+  const resScore = resiliente - fragil;
+  const resilienciaLabel = resScore >= 4 ? "Alta resiliência" : resScore >= 0 ? "Resiliência moderada" : "Fragilidade emocional";
+
+  // Vaga recomendada
+  let vagaRec, corVaga;
+  if (vendas > recepcao + 2) { vagaRec = "Vendas / Comercial"; corVaga = "#f4a261"; }
+  else if (recepcao > vendas + 2) { vagaRec = "Recepção / Atendimento"; corVaga = "#7eb8f7"; }
+  else { vagaRec = "Ambas as vagas"; corVaga = "#c9a84c"; }
+
+  // Motivação
+  const motMap = { A: "dinheiro e estabilidade", B: "crescimento e reconhecimento", C: "família e qualidade de vida", D: "propósito e impacto" };
+  const motivacao = motMap[r.p11?.letra] || motMap[r.b13?.letra] || "não identificada";
+
+  // Fator de retenção
+  const retencaoMap = {
+    retencao_salario: "movida por salário risco de perder se receber proposta melhor",
+    retencao_crescimento: "busca crescimento reter com oportunidades e reconhecimento",
+    retencao_ambiente: "prioriza ambiente e respeito reter com boa liderança e clima",
+    retencao_vida: "influenciada por fatores pessoais risco de mudanças externas"
+  };
+  let fatorRetencao = "não identificado";
+  const retKeys = ["retencao_salario","retencao_crescimento","retencao_ambiente","retencao_vida"];
+  for (const p of todasP) {
+    const resp = r[p.id];
+    if (!resp?.letra || !p.pontos) continue;
+    for (const key of retKeys) {
+      if (p.pontos[key]?.includes(resp.letra)) { fatorRetencao = retencaoMap[key]; break; }
+    }
+  }
+
+  // Risco de turnover
+  const turnoverLabel = turnover >= 3 ? "Alto" : turnover >= 1 ? "Moderado" : "Baixo";
+  const turnoverCor = turnover >= 3 ? "#e05252" : turnover >= 1 ? "#e0c05a" : "#7ecb8a";
+  const turnoverTexto = turnover >= 3
+    ? "Histórico ou motivações indicam risco elevado de saída precoce. Investigar na entrevista."
+    : turnover >= 1
+    ? "Risco moderado. Verificar estabilidade e expectativas na entrevista presencial."
+    : "Perfil estável. Motivações e histórico sugerem boa permanência.";
+
+  // Estilo de abordagem em vendas
+  const abordagemMap = {
+    venda_consultiva: "Consultiva / Relacional cria conexão antes de vender. Ideal para ticket médio/alto e clientes que precisam de confiança.",
+    venda_passiva: "Passiva espera o cliente decidir sozinho. Precisa de treinamento em fechamento e criação de urgência.",
+    venda_agressiva: "Agressiva / Urgência usa pressão para fechar. Funciona no curto prazo mas pode afastar clientes fiéis."
+  };
+  let estiloVendas = null;
+  if (r.v4?.letra) {
+    const p = PERGUNTAS_VENDAS.find(x => x.id === "v4");
+    for (const key of ["venda_consultiva","venda_passiva","venda_agressiva"]) {
+      if (p?.pontos?.[key]?.includes(r.v4.letra)) { estiloVendas = abordagemMap[key]; break; }
+    }
+  }
+
+  // Nível de autonomia
+  const autonomiaMap = {
+    autonomia_alta: "Alta depois do treinamento trabalha bem sozinha, pouco suporte necessário.",
+    autonomia_media: "Média trabalha bem sozinha nas tarefas que domina, busca confirmação em situações novas.",
+    autonomia_baixa: "Baixa vai precisar de acompanhamento próximo por mais tempo. Considerar mentoria no onboarding."
+  };
+  let nivelAutonomia = null;
+  const autPergIds = ["r5","rp3"];
+  for (const pid of autPergIds) {
+    if (!r[pid]?.letra) continue;
+    const p = todasP.find(x => x.id === pid);
+    for (const key of ["autonomia_alta","autonomia_media","autonomia_baixa"]) {
+      if (p?.pontos?.[key]?.includes(r[pid].letra)) { nivelAutonomia = autonomiaMap[key]; break; }
+    }
+    if (nivelAutonomia) break;
+  }
+
+  // Estilo de aprendizado
+  const aprendizadoMap = {
+    A: "Instrução + prática explique com calma antes de colocar pra fazer.",
+    B: "Aprendizado prático coloque pra executar logo com supervisão próxima.",
+    C: "Observação deixe assistir alguém fazer algumas vezes antes de assumir sozinha.",
+    D: "Organização prévia forneça checklists, fluxogramas ou materiais escritos."
+  };
+  const estiloAprendizado = r.b6?.letra ? aprendizadoMap[r.b6.letra] : null;
+
+  // Expectativa salarial
+  const salario = r.p_disp3?.texto || r.b_disp3?.texto || null;
+
+  // Perfil comportamental
+  const perfil_comportamental = (() => {
+    let txt = introExtro === "Extrovertida"
+      ? "Comunicativa e sociável, ganha energia no contato com pessoas. "
+      : introExtro === "Introvertida"
+      ? "Perfil mais reservado, processa internamente antes de agir. "
+      : "Equilibrada entre extroversão e introversão, adapta o comportamento conforme o ambiente. ";
+    txt += resilienciaLabel === "Alta resiliência"
+      ? "Demonstra maturidade emocional: aceita crítica, lida com pressão e segue em frente após dificuldades. "
+      : resilienciaLabel === "Resiliência moderada"
+      ? "Lida razoavelmente bem com pressão, mas pode precisar de suporte em situações de alta cobrança. "
+      : "Apresenta sinais de fragilidade emocional: tende a evitar conflito, fica na defensiva ou trava sob pressão. ";
+    txt += `Motivação principal: ${motivacao}.`;
+    if (primeiroEmprego) txt += " É seu primeiro emprego avaliar postura e atitude acima de experiência técnica.";
+    return txt;
+  })();
+
+  // Fit com a vaga
+  const fit_vaga = (() => {
+    if (vagaRec === "Vendas / Comercial") {
+      return `Perfil com inclinação para vendas: persuasiva, orientada a resultado e com tolerância à negação. ${resilienciaLabel === "Alta resiliência" ? "Boa resiliência emocional para aguentar cobranças de meta." : "Atenção: pode ter dificuldade com pressão de meta avaliar na entrevista."}`;
+    }
+    if (vagaRec === "Recepção / Atendimento") {
+      const exp = primeiroEmprego ? "Primeiro emprego avaliar atitude e capacidade de aprendizado acima de experiência." : "Já possui experiência verificar qualidade do atendimento anterior.";
+      const ext = introExtro !== "Introvertida" ? "Extroversão sustenta bem o volume de pessoas." : "Atenção: sendo introvertida, verificar se aguenta ritmo intenso de atendimento.";
+      return `Perfil acolhedor com boa presença no atendimento ao público. ${ext} ${exp}`;
+    }
+    return "Perfil versátil com características das duas funções. A entrevista presencial é essencial para identificar onde vai performar melhor.";
+  })();
+
+  // Pontos de atenção
+  const pontos_atencao = [];
+  if (r.p16?.letra === "C") pontos_atencao.push("Evita cobranças pode ter dificuldade em situações de pressão comercial.");
+  if (r.p3?.letra === "B" || r.p3?.letra === "D") pontos_atencao.push("Reage mal a críticas observar postura ao receber feedback da liderança.");
+  if (r.p14?.letra === "D") pontos_atencao.push("Demonstrou dificuldade em priorizar sob pressão pode travar em dias movimentados.");
+  if (r.p13?.letra === "C") pontos_atencao.push("Tendência a transferir problemas para outros ao invés de resolver investigar autonomia.");
+  if (r.v2?.letra === "A" || r.v2?.letra === "C") pontos_atencao.push("Para vendas: foco em desconto/preço ao invés de valor pode comprometer ticket médio.");
+  if (r.r3?.letra === "C" || r.rp5?.letra === "C") pontos_atencao.push("Para recepção: se esgota com volume de pessoas investigar ritmo do dia a dia.");
+  if (r.p_saida?.letra === "B") pontos_atencao.push("Saiu do emprego anterior por conflito com chefia investigar o contexto na entrevista.");
+  if (r.b7?.letra === "B") pontos_atencao.push("Trava quando erra na frente de outros pode impactar no período de aprendizado.");
+  if (r.b8?.letra === "C") pontos_atencao.push("Prefere ficar com dúvida a perguntar pode cometer erros por falta de comunicação.");
+  const sazonResp = r.p_sazon?.letra || r.b_sazon?.letra;
+  if (sazonResp === "D") pontos_atencao.push("Prefere rotina tranquila e se estresa com muito movimento. Avaliar fit com os picos sazonais da Dulce Buquê.");
+  if (pontos_atencao.length === 0) pontos_atencao.push("Nenhum sinal crítico identificado. Candidata respondeu de forma consistente e madura.");
+
+  // Perguntas sugeridas
+  const perguntas_entrevista = [];
+  if (r.p7?.texto) perguntas_entrevista.push(`Você mencionou um desafio no trabalho anterior. O que aquela situação te ensinou sobre você mesma?`);
+  if (r.p10?.texto) perguntas_entrevista.push(`Você quer "${r.p10.texto.slice(0,50)}..." daqui 3 anos. O que já está fazendo pra chegar lá?`);
+  if (r.p_saida?.letra === "B") perguntas_entrevista.push("Me conta mais sobre o que aconteceu com sua chefia anterior. O que você faria diferente?");
+  if (r.p3?.letra === "B" || r.p3?.letra === "D") perguntas_entrevista.push("Me conta uma situação em que você recebeu uma crítica que te incomodou de verdade. Como você agiu depois?");
+  if (vagaRec.includes("Vendas") || vaga === "vendas") perguntas_entrevista.push("Como você agiria se passasse 3 semanas seguidas sem bater a meta?");
+  if (primeiroEmprego) {
+    perguntas_entrevista.push("Como você imagina que vai se sentir nos primeiros dias aqui, lidando com pessoas o dia todo?");
+    perguntas_entrevista.push("Se você não soubesse algo e precisasse ajudar uma cliente, o que você faria?");
+  } else if (vagaRec.includes("Recepção") || vaga === "recepcao") {
+    perguntas_entrevista.push("Me descreve o pior dia de atendimento que você já teve e como você fechou esse dia.");
+  }
+  if (perguntas_entrevista.length < 3) perguntas_entrevista.push("O que você precisaria ter nesse trabalho pra dar 100% de você mesma todos os dias?");
+
+  // Veredicto
+  let veredicto, corVeredicto, justificativa;
+  const scoreGeral = resScore + (vagaRec !== "Ambas as vagas" ? 2 : 0) - (turnover >= 3 ? 2 : 0);
+  if (scoreGeral >= 4 && fragil <= 2) {
+    veredicto = "Recomendada para entrevista presencial";
+    corVeredicto = "#7ecb8a";
+    justificativa = "Perfil consistente, respostas maduras e fit claro com a vaga. Vale avançar no processo.";
+  } else if (scoreGeral >= 0) {
+    veredicto = "Avançar com atenção";
+    corVeredicto = "#e0c05a";
+    justificativa = "Tem potencial mas apresentou pontos de fragilidade. A entrevista presencial é decisiva.";
+  } else {
+    veredicto = "Não recomendada neste momento";
+    corVeredicto = "#e05252";
+    justificativa = "Respostas indicam fragilidade emocional ou baixo fit com as vagas. Avaliar só se não houver outras candidatas.";
+  }
+
+  return {
+    introExtro, resilienciaLabel, vagaRec, corVaga, motivacao,
+    fatorRetencao, turnoverLabel, turnoverCor, turnoverTexto,
+    estiloVendas, nivelAutonomia, estiloAprendizado, salario,
+    perfil_comportamental, fit_vaga, pontos_atencao, perguntas_entrevista,
+    veredicto, corVeredicto, justificativa,
+    primeiroEmprego
+  };
+}
+
+// ─── APP ──────────────────────────────────────────────────────────────────────
+export default function App() {
+  const [modo, setModo] = useState("inicio");
+  const [nomeCandidata, setNomeCandidata] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [vagaInteresse, setVagaInteresse] = useState("");
+  const [blocoAtual, setBlocoAtual] = useState(0);
+  const [respostas, setRespostas] = useState({});
+  const [candidatas, setCandidatas] = useState([]);
+  const [candidataSelecionada, setCandidataSelecionada] = useState(null);
+  const [senhaAdmin, setSenhaAdmin] = useState("");
+  const [erroSenha, setErroSenha] = useState(false);
+  const [laudoAberto, setLaudoAberto] = useState(false);
+  const SENHA = "bruna2025";
+
+  function imprimirLaudo(cand, laudo) {
+    const todasP = [
+      ...PERGUNTAS_BASE, ...PERGUNTAS_BASE_PRIMEIRO, ...PERGUNTAS_VENDAS,
+      PERGUNTA_PRIMEIRO_EMPREGO, ...PERGUNTAS_RECEPCAO_EXP, ...PERGUNTAS_RECEPCAO_PRIMEIRO
+    ];
+    const respostas_html = todasP.map(p => {
+      const resp = cand.respostas[p.id];
+      if (!resp) return "";
+      return `<div class="print-card"><span class="print-lbl">${p.bloco}</span><p style="font-size:13px;color:#666;margin-bottom:8px;line-height:1.6">${p.pergunta}</p><div class="print-resp">${resp.letra ? `(${resp.letra}) ${resp.texto}` : resp.texto}</div></div>`;
+    }).join("");
+
+    const vagaNome = cand.vagaInteresse === "vendas" ? "Auxiliar de Vendas" : cand.vagaInteresse === "recepcao" ? "Auxiliar de Loja" : "Ambas";
+    const pontos_html = laudo.pontos_atencao.map(p => `<p style="margin-bottom:6px;font-size:13px;line-height:1.7">• ${p}</p>`).join("");
+    const perguntas_html = laudo.perguntas_entrevista.slice(0,5).map((p,i) => `<p style="margin-bottom:10px;font-size:13px;line-height:1.7;padding-left:12px;border-left:2px solid #aaa">${i+1}. ${p}</p>`).join("");
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Laudo ${cand.nome}</title>
+    <style>
+      body{font-family:Georgia,serif;background:#fff;color:#111;margin:0;padding:20px 30px}
+      .print-lbl{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#888;display:block;margin-bottom:4px}
+      .print-card{background:#fff;border:1px solid #ddd;border-radius:4px;padding:14px 18px;margin-bottom:10px;page-break-inside:avoid}
+      .print-secao{padding:14px 18px;border-radius:4px;margin-bottom:14px;page-break-inside:avoid}
+      .print-tag{border:1px solid #ccc;border-radius:20px;padding:3px 11px;font-size:11px;color:#333;background:#f5f5f5;margin-right:6px;display:inline-block;margin-bottom:6px}
+      .print-resp{background:#f8f5e8;border-left:3px solid #bba040;padding:9px 13px;border-radius:3px;font-size:13px;color:#222;line-height:1.7}
+      h1{font-size:22px;font-weight:normal;margin:0 0 4px 0}h2{font-size:15px;font-weight:bold;margin:0 0 8px 0}p{margin:0 0 6px 0}
+      @page{margin:18mm 14mm}
+    </style></head><body>
+    <div style="border-bottom:2px solid #c9a84c;padding-bottom:14px;margin-bottom:22px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <span class="print-lbl">Laudo de Perfil Processo Seletivo</span>
+        <span style="font-size:10px;color:#888;text-align:right;line-height:1.6">Bruna Chaves Recrutamento &amp; Seleção<br/>Dulce Buquê</span>
+      </div>
+      <h1>${cand.nome}</h1>
+      ${cand.whatsapp ? `<p style="color:#2d7a3a;font-size:13px;margin-bottom:4px">📱 ${cand.whatsapp}</p>` : ""}
+      <p style="color:#888;font-size:12px">${cand.data} · Vaga: ${vagaNome}${laudo.primeiroEmprego ? " · Primeiro emprego" : ""}</p>
+      <div style="margin-top:10px">
+        <span class="print-tag">${laudo.introExtro}</span>
+        <span class="print-tag">${laudo.vagaRec}</span>
+        <span class="print-tag">${laudo.resilienciaLabel}</span>
+        <span class="print-tag">Turnover: ${laudo.turnoverLabel}</span>
+        ${laudo.salario ? `<span class="print-tag">Salário esperado: ${laudo.salario}</span>` : ""}
+      </div>
+    </div>
+    <div class="print-secao" style="background:#fafaf5;border-left:4px solid #c9a84c">
+      <span class="print-lbl">Veredicto</span>
+      <h2>${laudo.veredicto}</h2>
+      <p style="font-size:13px;color:#555;line-height:1.7">${laudo.justificativa}</p>
+    </div>
+    <div class="print-secao" style="background:#fafaf5;border-left:4px solid #888">
+      <span class="print-lbl">Perfil Comportamental</span>
+      <p style="font-size:13px;color:#333;line-height:1.8">${laudo.perfil_comportamental}</p>
+    </div>
+    <div class="print-secao" style="background:#f5f8ff;border-left:4px solid #7eb8f7">
+      <span class="print-lbl">Fit com a Vaga ${laudo.vagaRec}</span>
+      <p style="font-size:13px;color:#333;line-height:1.8">${laudo.fit_vaga}</p>
+    </div>
+    <div class="print-secao" style="background:#fff9f0;border-left:4px solid #f4a261">
+      <span class="print-lbl">Retenção e Risco de Turnover</span>
+      <p style="font-size:13px;color:#333;line-height:1.8"><strong>Risco:</strong> ${laudo.turnoverLabel} ${laudo.turnoverTexto}</p>
+      <p style="font-size:13px;color:#333;line-height:1.8;margin-top:6px"><strong>Fator de retenção:</strong> Ela é ${laudo.fatorRetencao}.</p>
+    </div>
+    ${laudo.estiloVendas ? `<div class="print-secao" style="background:#fff8f0;border-left:4px solid #f4a261"><span class="print-lbl">Estilo de Abordagem Comercial</span><p style="font-size:13px;color:#333;line-height:1.8">${laudo.estiloVendas}</p></div>` : ""}
+    ${laudo.nivelAutonomia ? `<div class="print-secao" style="background:#f5f8ff;border-left:4px solid #7eb8f7"><span class="print-lbl">Nível de Autonomia Esperado</span><p style="font-size:13px;color:#333;line-height:1.8">${laudo.nivelAutonomia}</p></div>` : ""}
+    ${laudo.estiloAprendizado ? `<div class="print-secao" style="background:#f5f0ff;border-left:4px solid #9b6fd4"><span class="print-lbl">Como Treinar Essa Candidata</span><p style="font-size:13px;color:#333;line-height:1.8">${laudo.estiloAprendizado}</p></div>` : ""}
+    <div class="print-secao" style="background:#fff5f5;border-left:4px solid #e05252">
+      <span class="print-lbl">Pontos de Atenção</span>${pontos_html}
+    </div>
+    <div class="print-secao" style="background:#f5faff;border-left:4px solid #7eb8f7">
+      <span class="print-lbl">Perguntas para a Entrevista Presencial</span>${perguntas_html}
+    </div>
+    <div style="margin-top:24px"><span class="print-lbl" style="margin-bottom:14px;display:block">Respostas Completas</span>${respostas_html}</div>
+    </body></html>`;
+
+    const win = window.open("", "_blank");
+    win.document.write(html);
+    win.document.close();
+    win.onload = () => { win.focus(); win.print(); };
+  }
+
+  const isPrimeiroEmprego = respostas.r0?.letra === "A";
+  const respondeuTriagem = !!respostas.r0;
+  const incluiRecepcao = vagaInteresse === "recepcao" || vagaInteresse === "ambas";
+  const incluiVendas = vagaInteresse === "vendas" || vagaInteresse === "ambas";
+
+  const blocoBase = (incluiRecepcao && isPrimeiroEmprego && respondeuTriagem)
+    ? PERGUNTAS_BASE_PRIMEIRO : PERGUNTAS_BASE;
+
+  const perguntasRecepcaoPerfil = () => {
+    if (!incluiRecepcao || !respondeuTriagem) return [];
+    return isPrimeiroEmprego ? PERGUNTAS_RECEPCAO_PRIMEIRO : PERGUNTAS_RECEPCAO_EXP;
+  };
+
+  const todasPerguntas = [
+    ...(incluiRecepcao ? [PERGUNTA_PRIMEIRO_EMPREGO] : []),
+    ...blocoBase,
+    ...(incluiVendas ? PERGUNTAS_VENDAS : []),
+    ...perguntasRecepcaoPerfil(),
+  ];
+
+  const blocos = [...new Set(todasPerguntas.map(p => p.bloco))];
+  const perguntasDoBloco = todasPerguntas.filter(p => p.bloco === blocos[blocoAtual]);
+
+  useEffect(() => {
+    const s = localStorage.getItem("candidatas_v4");
+    if (s) setCandidatas(JSON.parse(s));
+  }, []);
+
+  function salvar(id, val) { setRespostas(p => ({ ...p, [id]: val })); }
+  function blocoOk() { return perguntasDoBloco.every(p => respostas[p.id]); }
+
+  function avancar() {
+    if (blocoAtual < blocos.length - 1) setBlocoAtual(b => b + 1);
+    else {
+      const nova = { id: Date.now(), nome: nomeCandidata, whatsapp, vagaInteresse, data: new Date().toLocaleString("pt-BR"), respostas };
+      const lista = [...candidatas, nova];
+      setCandidatas(lista);
+      localStorage.setItem("candidatas_v4", JSON.stringify(lista));
+      setModo("obrigado");
+    }
+  }
+
+  const S = {
+    root: { minHeight: "100vh", background: "#0a0a0a", color: "#f0ede6", fontFamily: "Georgia, serif" },
+    pg: { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "100vh", padding: "24px" },
+    card: { background: "#141414", border: "1px solid #2a2a2a", borderRadius: "4px", padding: "44px 36px", maxWidth: "640px", width: "100%" },
+    lbl: { fontSize: "11px", letterSpacing: "4px", textTransform: "uppercase", color: "#c9a84c", marginBottom: "6px", display: "block" },
+    h1: { fontSize: "26px", fontWeight: "normal", marginBottom: "8px", lineHeight: 1.3 },
+    sub: { color: "#777", fontSize: "14px", lineHeight: 1.7, marginBottom: "28px" },
+    inp: { width: "100%", padding: "13px 16px", background: "#1a1a1a", border: "1px solid #333", borderRadius: "4px", color: "#f0ede6", fontSize: "15px", outline: "none", boxSizing: "border-box", fontFamily: "Georgia, serif" },
+    btn: (on) => ({ padding: "13px 28px", background: "#c9a84c", color: "#0a0a0a", border: "none", borderRadius: "4px", fontSize: "13px", letterSpacing: "1px", cursor: on ? "pointer" : "default", fontWeight: "bold", fontFamily: "Georgia, serif", opacity: on ? 1 : 0.35 }),
+    btnO: { padding: "13px 22px", background: "transparent", color: "#777", border: "1px solid #2a2a2a", borderRadius: "4px", fontSize: "13px", cursor: "pointer", fontFamily: "Georgia, serif" },
+    vagaBtn: (s) => ({ flex: 1, padding: "14px", background: s ? "#1e1a10" : "#1a1a1a", border: s ? "1px solid #c9a84c" : "1px solid #2a2a2a", borderRadius: "4px", color: s ? "#c9a84c" : "#999", cursor: "pointer", fontFamily: "Georgia, serif", fontSize: "14px" }),
+    opBtn: (s) => ({ width: "100%", textAlign: "left", padding: "13px 16px", background: s ? "#1e1a10" : "#1a1a1a", border: s ? "1px solid #c9a84c" : "1px solid #252525", borderRadius: "4px", color: s ? "#c9a84c" : "#ccc", cursor: "pointer", fontSize: "14px", lineHeight: 1.5, marginBottom: "8px", display: "flex", gap: "12px", fontFamily: "Georgia, serif" }),
+    circ: (s) => ({ width: "20px", height: "20px", borderRadius: "50%", flexShrink: 0, background: s ? "#c9a84c" : "#252525", color: s ? "#0a0a0a" : "#777", fontSize: "10px", fontWeight: "bold", display: "flex", alignItems: "center", justifyContent: "center" }),
+    tag: (c) => ({ display: "inline-block", padding: "3px 11px", background: c + "22", border: `1px solid ${c}44`, borderRadius: "20px", color: c, fontSize: "11px", marginRight: "7px", marginBottom: "7px" }),
+    dot: (a, f) => ({ height: "3px", flex: 1, borderRadius: "2px", background: f ? "#c9a84c" : a ? "#c9a84c55" : "#1e1e1e" }),
+    secao: (c) => ({ background: "#111", border: `1px solid ${c}33`, borderLeft: `3px solid ${c}`, padding: "16px 20px", borderRadius: "4px", marginBottom: "16px" }),
+  };
+
+  if (modo === "inicio") return (
+    <div style={S.root}><div style={S.pg}>
+      <div style={S.card}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "4px" }}>
+          <span style={S.lbl}>Processo Seletivo</span>
+          <span style={{ fontSize: "10px", color: "#555", letterSpacing: "1px", textAlign: "right", lineHeight: 1.5 }}>Bruna Chaves<br/>Recrutamento &amp; Seleção</span>
+        </div>
+        <p style={{ fontSize: "13px", color: "#c9a84c88", marginBottom: "16px" }}>Dulce Buquê</p>
+        <h1 style={S.h1}>Antes da entrevista,<br />queremos te conhecer melhor.</h1>
+        <p style={S.sub}>Não tem resposta certa ou errada responda com sinceridade. Leva cerca de 12 minutos.</p>
+        <div style={{ marginBottom: "18px" }}>
+          <label style={{ ...S.lbl, letterSpacing: "2px", marginBottom: "8px" }}>Seu nome completo</label>
+          <input style={S.inp} placeholder="Digite seu nome..." value={nomeCandidata} onChange={e => setNomeCandidata(e.target.value)} />
+        </div>
+        <div style={{ marginBottom: "18px" }}>
+          <label style={{ ...S.lbl, letterSpacing: "2px", marginBottom: "8px" }}>Seu WhatsApp</label>
+          <input style={S.inp} placeholder="Ex: (11) 99999-9999..." value={whatsapp} onChange={e => setWhatsapp(e.target.value)} />
+        </div>
+        <div style={{ marginBottom: "28px" }}>
+          <label style={{ ...S.lbl, letterSpacing: "2px", marginBottom: "10px" }}>Para qual vaga você está se candidatando?</label>
+          <div style={{ display: "flex", gap: "8px" }}>
+            {["vendas","recepcao","ambas"].map(v => (
+              <button key={v} style={S.vagaBtn(vagaInteresse === v)} onClick={() => setVagaInteresse(v)}>
+                {v === "vendas" ? "Auxiliar de Vendas" : v === "recepcao" ? "Auxiliar de Loja" : "Ambas"}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <button style={S.btn(nomeCandidata.trim() && whatsapp.trim() && vagaInteresse)} onClick={() => nomeCandidata.trim() && whatsapp.trim() && vagaInteresse && setModo("formulario")}>
+            Começar teste →
+          </button>
+          <button style={{ ...S.btnO, fontSize: "11px" }} onClick={() => setModo("login")}>Área admin</button>
+        </div>
+      </div>
+    </div></div>
+  );
+
+  if (modo === "login") return (
+    <div style={S.root}><div style={S.pg}>
+      <div style={{ ...S.card, maxWidth: "380px" }}>
+        <span style={S.lbl}>Acesso restrito</span>
+        <h1 style={{ ...S.h1, fontSize: "20px", marginBottom: "24px" }}>Área da recrutadora</h1>
+        <input style={{ ...S.inp, marginBottom: "14px" }} type="password" placeholder="Senha..." value={senhaAdmin}
+          onChange={e => { setSenhaAdmin(e.target.value); setErroSenha(false); }}
+          onKeyDown={e => e.key === "Enter" && (senhaAdmin === SENHA ? setModo("admin") : setErroSenha(true))} />
+        {erroSenha && <p style={{ color: "#e05252", fontSize: "13px", marginBottom: "12px" }}>Senha incorreta.</p>}
+        <button style={S.btn(true)} onClick={() => senhaAdmin === SENHA ? setModo("admin") : setErroSenha(true)}>Entrar</button>
+      </div>
+    </div></div>
+  );
+
+  if (modo === "formulario") return (
+    <div style={S.root}>
+      <div style={{ ...S.pg, justifyContent: "flex-start", paddingTop: "44px" }}>
+        <div style={S.card}>
+          <div style={{ display: "flex", gap: "5px", marginBottom: "28px" }}>
+            {blocos.map((b, i) => <div key={b} style={S.dot(i === blocoAtual, i < blocoAtual)} />)}
+          </div>
+          <span style={S.lbl}>Bloco {blocoAtual + 1} de {blocos.length}</span>
+          <h2 style={{ ...S.h1, fontSize: "20px", marginBottom: "26px" }}>{blocos[blocoAtual]}</h2>
+          {perguntasDoBloco.map((p, idx) => (
+            <div key={p.id} style={{ marginBottom: "28px" }}>
+              <p style={{ fontSize: "15px", color: "#ddd", marginBottom: "14px", lineHeight: 1.7 }}>
+                <span style={{ color: "#c9a84c88", marginRight: "8px", fontSize: "12px" }}>{idx + 1}.</span>{p.pergunta}
+              </p>
+              {p.tipo === "texto"
+                ? <textarea style={{ ...S.inp, minHeight: "78px", resize: "vertical", lineHeight: 1.7 }}
+                    placeholder={p.placeholder} value={respostas[p.id]?.texto || ""}
+                    onChange={e => salvar(p.id, { texto: e.target.value })} />
+                : p.opcoes.map(op => {
+                    const sel = respostas[p.id]?.letra === op.letra;
+                    return (
+                      <button key={op.letra} style={S.opBtn(sel)} onClick={() => salvar(p.id, { letra: op.letra, texto: op.texto })}>
+                        <span style={S.circ(sel)}>{op.letra}</span><span>{op.texto}</span>
+                      </button>
+                    );
+                  })
+              }
+            </div>
+          ))}
+          <div style={{ display: "flex", gap: "10px" }}>
+            {blocoAtual > 0 && <button style={S.btnO} onClick={() => setBlocoAtual(b => b - 1)}>← Voltar</button>}
+            <button style={{ ...S.btn(blocoOk()), marginLeft: "auto" }} onClick={() => blocoOk() && avancar()}>
+              {blocoAtual < blocos.length - 1 ? "Próximo →" : "Enviar ✓"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (modo === "obrigado") return (
+    <div style={S.root}><div style={S.pg}>
+      <div style={{ ...S.card, textAlign: "center" }}>
+        <p style={{ fontSize: "11px", color: "#555", marginBottom: "12px" }}>Bruna Chaves Recrutamento &amp; Seleção</p>
+        <div style={{ fontSize: "36px", marginBottom: "14px" }}>✓</div>
+        <span style={S.lbl}>Teste concluído</span>
+        <h1 style={{ ...S.h1, fontSize: "20px" }}>Obrigada, {nomeCandidata.split(" ")[0]}!</h1>
+        <p style={S.sub}>Suas respostas foram enviadas. Entraremos em contato em breve com os próximos passos.</p>
+        <p style={{ color: "#444", fontSize: "13px" }}>Pode fechar essa página.</p>
+      </div>
+    </div></div>
+  );
+
+  if (modo === "admin") {
+    const cand = candidataSelecionada;
+    const laudo = cand ? gerarLaudo(cand) : null;
+    const corRes = (r) => r.includes("Alta") ? "#7ecb8a" : r.includes("mod") ? "#e0c05a" : "#e05252";
+
+    return (
+      <div style={S.root}>
+        <div style={{ maxWidth: "860px", margin: "0 auto", padding: "36px 20px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "36px" }}>
+            <div>
+              <span style={S.lbl}>Painel da Recrutadora</span>
+              <h1 style={{ ...S.h1, fontSize: "22px" }}>{cand ? cand.nome : "Respostas dos Testes"}</h1>
+            </div>
+            {cand && (
+              <div style={{ display: "flex", gap: "10px" }}>
+                <button style={S.btnO} onClick={() => { setCandidataSelecionada(null); setLaudoAberto(false); }}>← Lista</button>
+                <button style={{ ...S.btn(true), padding: "10px 18px", fontSize: "12px" }} onClick={() => imprimirLaudo(cand, laudo)}>🖨 PDF</button>
+              </div>
+            )}
+          </div>
+
+          {!cand ? (
+            candidatas.length === 0
+              ? <div style={{ ...S.card, textAlign: "center" }}><p style={{ color: "#444" }}>Nenhum teste respondido ainda.</p></div>
+              : candidatas.slice().reverse().map(c => {
+                  const l = gerarLaudo(c);
+                  return (
+                    <div key={c.id} style={{ ...S.card, marginBottom: "12px", padding: "20px 24px", cursor: "pointer" }}
+                      onMouseEnter={e => e.currentTarget.style.borderColor = "#c9a84c44"}
+                      onMouseLeave={e => e.currentTarget.style.borderColor = "#2a2a2a"}
+                      onClick={() => { setCandidataSelecionada(c); setLaudoAberto(false); }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
+                        <div>
+                          <p style={{ fontSize: "17px", marginBottom: "3px" }}>{c.nome}</p>
+                          <p style={{ color: "#444", fontSize: "12px" }}>{c.whatsapp && <span style={{ color: "#7ecb8a", marginRight: "10px" }}>📱 {c.whatsapp}</span>}{c.data} · <span style={{ color: "#c9a84c88" }}>{c.vagaInteresse === "vendas" ? "Auxiliar de Vendas" : c.vagaInteresse === "recepcao" ? "Auxiliar de Loja" : "Ambas"}</span></p>
+                        </div>
+                        <div>
+                          <span style={S.tag("#c9a84c")}>{l.introExtro}</span>
+                          <span style={S.tag(l.corVaga)}>{l.vagaRec}</span>
+                          <span style={S.tag(corRes(l.resilienciaLabel))}>{l.resilienciaLabel}</span>
+                          <span style={S.tag(l.turnoverCor)}>Turnover: {l.turnoverLabel}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+          ) : (
+            <div>
+              {cand.whatsapp && (
+                <p style={{ fontSize: "15px", color: "#7ecb8a", marginBottom: "16px" }}>📱 {cand.whatsapp}</p>
+              )}
+              {/* Tags */}
+              <div style={{ marginBottom: "24px" }}>
+                <span style={S.tag("#c9a84c")}>{laudo.introExtro}</span>
+                <span style={S.tag(laudo.corVaga)}>{laudo.vagaRec}</span>
+                <span style={S.tag(corRes(laudo.resilienciaLabel))}>{laudo.resilienciaLabel}</span>
+                <span style={S.tag(laudo.turnoverCor)}>Turnover: {laudo.turnoverLabel}</span>
+                {laudo.salario && <span style={S.tag("#aaa")}>Salário esperado: {laudo.salario}</span>}
+                {laudo.primeiroEmprego && <span style={S.tag("#b07fff")}>⭐ Primeiro emprego</span>}
+              </div>
+
+              {/* Veredicto */}
+              <div style={{ ...S.secao(laudo.corVeredicto), marginBottom: "20px" }}>
+                <span style={{ ...S.lbl, color: laudo.corVeredicto, marginBottom: "6px" }}>Veredicto</span>
+                <p style={{ fontSize: "17px", color: laudo.corVeredicto, marginBottom: "8px" }}>{laudo.veredicto}</p>
+                <p style={{ fontSize: "14px", color: "#bbb", lineHeight: 1.7 }}>{laudo.justificativa}</p>
+              </div>
+
+              <button style={{ ...S.btn(true), width: "100%", marginBottom: "20px", fontSize: "13px" }}
+                onClick={() => setLaudoAberto(o => !o)}>
+                {laudoAberto ? "▲ Fechar laudo completo" : "▼ Ver laudo completo"}
+              </button>
+
+              {laudoAberto && (
+                <div>
+                  <div style={S.secao("#c9a84c")}>
+                    <span style={{ ...S.lbl, marginBottom: "8px" }}>Perfil comportamental</span>
+                    <p style={{ fontSize: "14px", color: "#ccc", lineHeight: 1.8 }}>{laudo.perfil_comportamental}</p>
+                  </div>
+
+                  <div style={S.secao(laudo.corVaga)}>
+                    <span style={{ ...S.lbl, color: laudo.corVaga, marginBottom: "8px" }}>Fit com a vaga {laudo.vagaRec}</span>
+                    <p style={{ fontSize: "14px", color: "#ccc", lineHeight: 1.8 }}>{laudo.fit_vaga}</p>
+                  </div>
+
+                  <div style={S.secao("#f4a261")}>
+                    <span style={{ ...S.lbl, color: "#f4a261", marginBottom: "8px" }}>Retenção e risco de turnover</span>
+                    <p style={{ fontSize: "14px", color: "#ccc", lineHeight: 1.7, marginBottom: "8px" }}>
+                      <span style={{ color: laudo.turnoverCor }}>Risco {laudo.turnoverLabel}</span> {laudo.turnoverTexto}
+                    </p>
+                    <p style={{ fontSize: "14px", color: "#ccc", lineHeight: 1.7 }}>
+                      Ela é <strong style={{ color: "#f0ede6" }}>{laudo.fatorRetencao}</strong>.
+                    </p>
+                  </div>
+
+                  {laudo.estiloVendas && (
+                    <div style={S.secao("#f4a261")}>
+                      <span style={{ ...S.lbl, color: "#f4a261", marginBottom: "8px" }}>Estilo de abordagem comercial</span>
+                      <p style={{ fontSize: "14px", color: "#ccc", lineHeight: 1.8 }}>{laudo.estiloVendas}</p>
+                    </div>
+                  )}
+
+                  {laudo.nivelAutonomia && (
+                    <div style={S.secao("#7eb8f7")}>
+                      <span style={{ ...S.lbl, color: "#7eb8f7", marginBottom: "8px" }}>Nível de autonomia esperado</span>
+                      <p style={{ fontSize: "14px", color: "#ccc", lineHeight: 1.8 }}>{laudo.nivelAutonomia}</p>
+                    </div>
+                  )}
+
+                  {laudo.estiloAprendizado && (
+                    <div style={S.secao("#b07fff")}>
+                      <span style={{ ...S.lbl, color: "#b07fff", marginBottom: "8px" }}>⭐ Como treinar essa candidata</span>
+                      <p style={{ fontSize: "14px", color: "#ccc", lineHeight: 1.8 }}>{laudo.estiloAprendizado}</p>
+                    </div>
+                  )}
+
+                  <div style={S.secao("#e05252")}>
+                    <span style={{ ...S.lbl, color: "#e05252", marginBottom: "10px" }}>Pontos de atenção</span>
+                    {laudo.pontos_atencao.map((p, i) => (
+                      <p key={i} style={{ fontSize: "14px", color: "#ccc", lineHeight: 1.7, marginBottom: "6px" }}>
+                        <span style={{ color: "#e0525266", marginRight: "8px" }}>•</span>{p}
+                      </p>
+                    ))}
+                  </div>
+
+                  <div style={S.secao("#7eb8f7")}>
+                    <span style={{ ...S.lbl, color: "#7eb8f7", marginBottom: "10px" }}>Perguntas para a entrevista presencial</span>
+                    {laudo.perguntas_entrevista.slice(0,5).map((p, i) => (
+                      <p key={i} style={{ fontSize: "14px", color: "#ccc", lineHeight: 1.7, marginBottom: "10px", paddingLeft: "12px", borderLeft: "2px solid #7eb8f733" }}>
+                        {i + 1}. {p}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <p style={{ ...S.lbl, marginBottom: "14px", marginTop: "8px" }}>Respostas completas</p>
+              {[...PERGUNTAS_BASE, ...PERGUNTAS_BASE_PRIMEIRO, PERGUNTA_PRIMEIRO_EMPREGO, ...PERGUNTAS_VENDAS, ...PERGUNTAS_RECEPCAO_EXP, ...PERGUNTAS_RECEPCAO_PRIMEIRO].map(p => {
+                const resp = cand.respostas[p.id];
+                if (!resp) return null;
+                return (
+                  <div key={p.id} style={{ ...S.card, marginBottom: "10px", padding: "18px 22px" }}>
+                    <span style={{ ...S.lbl, fontSize: "10px", color: "#555", marginBottom: "4px" }}>{p.bloco}</span>
+                    <p style={{ fontSize: "13px", color: "#888", marginBottom: "10px", lineHeight: 1.6 }}>{p.pergunta}</p>
+                    <p style={{ background: "#1a170a", borderLeft: "3px solid #c9a84c55", padding: "10px 14px", borderRadius: "3px", fontSize: "14px", color: "#e0dcd0", lineHeight: 1.7 }}>
+                      {resp.letra ? `(${resp.letra}) ${resp.texto}` : resp.texto}
+                    </p>
+                    <p style={{ fontSize: "11px", color: "#333", marginTop: "6px" }}>🔍 {p.analisa}</p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
