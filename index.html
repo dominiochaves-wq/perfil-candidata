@@ -623,7 +623,8 @@ const PERGUNTAS_RECEPCAO_PRIMEIRO = [
 function gerarLaudo(cand) {
   const r = cand.respostas;
   const vaga = cand.vagaInteresse;
-  const primeiroEmprego = r.r0?.letra === "A";
+  const primeiroEmprego = r && r.r0?.letra === "A";
+  if (!r) return { introExtro: 'N/A', resilienciaLabel: 'N/A', vagaRec: 'N/A', corVaga: '#888', motivacao: 'N/A', fatorRetencao: 'N/A', turnoverLabel: 'N/A', turnoverCor: '#888', turnoverTexto: '', estiloVendas: null, nivelAutonomia: null, estiloAprendizado: null, salario: null, perfil_comportamental: '', fit_vaga: '', pontos_atencao: [], perguntas_entrevista: [], veredicto: 'N/A', corVeredicto: '#888', justificativa: '', primeiroEmprego: false };
 
   let extro = 0, intro = 0, vendas = 0, recepcao = 0, resiliente = 0, fragil = 0;
   let turnover = 0; // quanto maior, mais risco de sair cedo
@@ -1257,3 +1258,17 @@ ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(
   </script>
 </body>
 </html>
+  
+
+
+ 
+
+     
+  
+  
+ 
+   
+
+   
+  
+  
